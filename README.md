@@ -1,6 +1,29 @@
-# Ember-share-buttons
+# Ember Share Buttons
 
-This README outlines the details of collaborating on this Ember addon.
+Include buttons for some of the more popular social sharing platforms:
+
+* Facebook
+* Twitter
+* Pinterest
+* LinkedIn
+* Reddit
+* Google+
+* Whatsapp (mobile only)
+* Email
+
+The inspiration and much of the code for this addon was borrowed liberally from https://github.com/carrot/share-button
+
+## Installing in your Ember app
+```
+ember install ember-share-buttons
+```
+In your template, use:
+```
+{{share-buttons}}
+```
+
+## Configuration
+TBD
 
 ## Installation
 
