@@ -1,5 +1,7 @@
 # Ember Share Buttons
 
+*NOTE - This is very much a WIP, some features flat out don't work yet. Use at your own risk.*
+
 Include buttons for some of the more popular social sharing platforms:
 
 * Facebook
