@@ -11,6 +11,7 @@ export default Ember.Component.extend({
   classNames: ['share-buttons'],
   layout: template,
   enabledNetworks: readOnly('shareConfig.ui.enabledNetworks'),
+  flyouts: readOnly('shareConfig.ui.flyout'),
   config: {},
 
   didInsertElement() {
@@ -51,7 +52,6 @@ export default Ember.Component.extend({
       }
     }
 
-    this._fixFlyout();
     this._detectNetworks();
     this._normalizeNetworkConfiguration();
 
@@ -109,9 +109,6 @@ export default Ember.Component.extend({
     if (this._hasClass(networks, 'load')) {
       this._removeClass(networks, 'load');
     }
-    if (this.collision) {
-      this._collisionDetection(button, networks);
-    }
 
     this._addClass(networks, 'active');
   },
@@ -130,177 +127,6 @@ export default Ember.Component.extend({
       window.clearInterval(this.listener);
       this.listener = null;
     }
-  },
-
-  /**
-   * @method _fixFlyout
-   * @description Fixes the flyout entered by the user to match their provided
-   * namespace
-   * @private
-   */
-  _fixFlyout() {
-    let config = this.get('shareConfig');
-
-    let flyouts = config.ui.flyout.split(' ');
-    if (flyouts[0].substring(0,config.ui.namespace.length) !== config.ui.namespace) {
-      flyouts[0] = `${config.ui.namespace}${flyouts[0]}`;
-    }
-    if (flyouts[1].substring(0,config.ui.namespace.length) !== config.ui.namespace) {
-      flyouts[1] = `${config.ui.namespace}${flyouts[1]}`;
-    }
-    config.ui.flyout = flyouts.join(' ');
-  },
-
-  /**
-   * @method _collisionDetection
-   * @description Adds listeners the first time a button is clicked to call
-   * this._adjustClasses during scrolls and resizes.
-   * @private
-   *
-   * @param {DOMNode} button - share button
-   * @param {DOMNode} networks - list of social networks
-   */
-  _collisionDetection(button, networks) {
-    let dimensions = this._getDimensions(button, networks);
-    this._adjustClasses(button, networks, dimensions);
-
-    if (!button.classList.contains('clicked')) {
-      window.addEventListener('scroll', () =>
-        this._adjustClasses(button, dimensions));
-      window.addEventListener('resize', () =>
-        this._adjustClasses(button, dimensions));
-      button.classList.add('clicked');
-    }
-  },
-
-  /**
-   * @method _getDimensions
-   * @description Returns an object with the dimensions of the button and
-   * label elements of a Share Button.
-   * @private
-   *
-   * @param {DOMNode} button
-   * @param {DOMNode} networks
-   * @returns {Object}
-   */
-  _getDimensions(button, networks) {
-    return {
-      networksWidth: networks.offsetWidth,
-      buttonHeight: button.offsetHeight,
-      buttonWidth: button.offsetWidth
-    };
-  },
-
-  /**
-   * @method _adjustClasses
-   * @description Adjusts the positioning of the list of social networks based
-   * off of where the share button is relative to the window.
-   *
-   * @private
-   * @param {DOMNode} button
-   * @param {DOMNode} networks
-   * @param {Object} dimensions
-   */
-  _adjustClasses(button, networks, dimensions) {
-    let config = this.get('shareConfig');
-
-    let windowWidth = window.innerWidth;
-    let windowHeight = window.innerHeight;
-    let leftOffset = button.getBoundingClientRect().left +
-      dimensions.buttonWidth / 2;
-    let rightOffset = windowWidth - leftOffset;
-    let topOffset = button.getBoundingClientRect().top +
-      dimensions.buttonHeight / 2;
-    let position =
-      this._findLocation(leftOffset, topOffset, windowWidth, windowHeight);
-
-    if (position[1] === "middle" && position[0] !== "center" &&
-        ((position[0] === "left" &&
-          windowWidth <= leftOffset + 220 + dimensions.buttonWidth / 2) ||
-        (position[0] === "right" &&
-          windowWidth <= rightOffset + 220 + dimensions.buttonWidth / 2)
-        )
-      ) {
-        networks.classList.add(`${config.ui.namespace}top`);
-        networks.classList.remove(`${config.ui.namespace}middle`);
-        networks.classList.remove(`${config.ui.namespace}bottom`);
-    }
-    else {
-      switch(position[0]) {
-        case "left":
-          networks.classList.add(`${config.ui.namespace}right`);
-          networks.classList.remove(`${config.ui.namespace}center`);
-          networks.classList.remove(`${config.ui.namespace}left`);
-          break;
-        case "center":
-          if (position[1] !== "top") {
-            networks.classList.add(`${config.ui.namespace}top`);
-          }
-          networks.classList.add(`${config.ui.namespace}center`);
-          networks.classList.remove(`${config.ui.namespace}left`);
-          networks.classList.remove(`${config.ui.namespace}right`);
-          networks.classList.remove(`${config.ui.namespace}middle`);
-          break;
-        case "right":
-          networks.classList.add(`${config.ui.namespace}left`);
-          networks.classList.remove(`${config.ui.namespace}center`);
-          networks.classList.remove(`${config.ui.namespace}right`);
-          break;
-      }
-      switch(position[1]) {
-        case "top":
-          networks.classList.add(`${config.ui.namespace}bottom`);
-          networks.classList.remove(`${config.ui.namespace}middle`);
-          if (position[0] !== "center") {
-            networks.classList.remove(`${config.ui.namespace}top`);
-          }
-          break;
-        case "middle":
-          if (position[0] !== "center") {
-            networks.classList.add(`${config.ui.namespace}middle`);
-            networks.classList.remove(`${config.ui.namespace}top`);
-          }
-          networks.classList.remove(`${config.ui.namespace}bottom`);
-          break;
-        case "bottom":
-          networks.classList.add(`${config.ui.namespace}top`);
-          networks.classList.remove(`${config.ui.namespace}middle`);
-          networks.classList.remove(`${config.ui.namespace}bottom`);
-          break;
-      }
-    }
-  },
-
-  /**
-   * @method _findLocation
-   * @description Finds the location of the label given by its x and y value
-   * with respect to the window width and window height given.
-   * @private
-   *
-   * @param {number} labelX
-   * @param {number} labelY
-   * @param {number} windowWidth
-   * @param {number} windowHeight
-   * @returns {Array}
-   */
-  _findLocation(labelX, labelY, windowWidth, windowHeight) {
-    let xPosition = ["left", "center", "right"];
-    let yPosition = ["top", "middle", "bottom"];
-    let xLocation =
-      Math.trunc(3 * (1 - ((windowWidth - labelX) / windowWidth)));
-    let yLocation =
-      Math.trunc(3 * (1 - ((windowHeight - labelY) / windowHeight)));
-    if (xLocation >= 3) {
-      xLocation = 2;
-    } else if (xLocation <= -1) {
-      xLocation = 0;
-    }
-    if (yLocation >= 3) {
-      yLocation = 2;
-    } else if (yLocation <= -1) {
-      yLocation = 0;
-    }
-    return [xPosition[xLocation], yPosition[yLocation]];
   },
 
   _networkFacebook(element) {
